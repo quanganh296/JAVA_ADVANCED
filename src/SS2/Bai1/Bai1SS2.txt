@@ -1,0 +1,7 @@
+_Kiểm tra User có phải Admin hay không (true/false): Sử dụng Predicate<User> vì interface này nhận vào một đối tượng và luôn trả về kết quả kiểu boolean, chuyên dùng để lọc hoặc kiểm tra điều kiện.
+
+_Chuyển đổi User thành chuỗi String (username): Sử dụng Function<User, String> vì nó nhận vào một đối tượng kiểu này (User) và trả về một đối tượng kiểu khác (String), đại diện cho logic biến đổi dữ liệu.
+
+_In thông tin chi tiết User ra Console: Sử dụng Consumer<User> vì tác vụ này chỉ "tiêu thụ" đối tượng User để thực hiện một hành động (in ấn) mà không cần trả về bất kỳ kết quả nào (void).
+
+_Khởi tạo User mới với giá trị mặc định: Sử dụng Supplier<User> vì nó đóng vai trò là "nhà cung cấp", không cần tham số đầu vào nhưng luôn trả về một đối tượng User mới khi được gọi.

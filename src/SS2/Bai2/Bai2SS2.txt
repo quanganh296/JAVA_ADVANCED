@@ -1,0 +1,21 @@
+
+Để rút gọn đoạn mã từ Anonymous Class sang Lambda một cách tối giản nhất, chúng ta sẽ loại bỏ tên kiểu dữ liệu, dấu ngoặc đơn (vì chỉ có một tham số) và từ khóa return cùng dấu ngoặc nhọn (vì chỉ có một biểu thức).
+
+1. Triển khai bằng cú pháp Lambda ngắn gọn nhất
+Dòng mã rút gọn: PasswordValidator validator = password -> password.length() >= 8;
+
+2. Giải thích các bước rút gọn
+Bỏ khai báo kiểu dữ liệu: Java tự hiểu password là String dựa vào định nghĩa trong Interface.
+
+Bỏ dấu ngoặc đơn () quanh tham số: Do chỉ có duy nhất một tham số là password.
+
+Bỏ dấu ngoặc nhọn {} và từ khóa return: Do thân hàm chỉ có một câu lệnh thực thi trả về giá trị.
+
+3. Chương trình thực hiện kiểm tra
+Kiểm tra mật khẩu "12345678":
+System.out.println(validator.isValid("12345678"));
+-> Kết quả: true (Vì độ dài bằng 8).
+
+Kiểm tra mật khẩu "1234":
+System.out.println(validator.isValid("1234"));
+-> Kết quả: false (Vì độ dài nhỏ hơn 8).
