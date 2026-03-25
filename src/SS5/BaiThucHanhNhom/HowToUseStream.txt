@@ -1,0 +1,18 @@
+Bước 1: Khởi tạo luồng (Source)
+Bạn không thể dùng Stream trực tiếp trên một List thông thường. Bạn phải đưa nó lên "băng chuyền" bằng cách gọi hàm .stream().
+
+Ví dụ: menuList.stream() -> Lúc này, các món ăn bắt đầu nối đuôi nhau chảy vào đường ống xử lý.
+
+Bước 2: Các thao tác trung gian (Intermediate Operations)
+Đây là các "cỗ máy chế biến" đặt dọc theo băng chuyền. Điểm đặc biệt của các thao tác này là chúng không làm thay đổi dữ liệu gốc và luôn trả về một Stream mới để đi tiếp đến máy khác.
+
+Trong dự án quản lý Menu của chúng ta, máy chế biến được dùng nhiều nhất là filter:
+
+.filter(điều kiện): Hoạt động như một cái rây lọc. Nó xét từng phần tử đi qua, nếu thỏa mãn điều kiện (true) thì cho đi tiếp, nếu không (false) thì vứt bỏ khỏi băng chuyền.
+
+Code thực tế: .filter(item -> item.getPrice() >= min && item.getPrice() <= max) -> Chỉ cho các món ăn có giá nằm trong khoảng min - max đi tiếp.
+
+(Ngoài filter, Java còn có các máy khác như .map() để biến đổi dữ liệu, .sorted() để sắp xếp, .limit() để giới hạn số lượng,...)
+
+Bước 3: Thao tác kết thúc (Terminal Operations)
+Đây là khâu "đóng gói thành phẩm" ở cuối dây chuyền. Lưu ý cực kỳ quan trọng: Nếu không có thao tác kết thúc, dây chuyền ở Bước 2 sẽ KHÔNG BAO GIỜ chạy (đây gọi là tính chất Lazy Evaluation - lười biếng).
