@@ -1,0 +1,49 @@
+Phần 1 - Phân tích: Ý nghĩa giá trị trả về của executeUpdate()
+1. Giá trị trả về của executeUpdate() là gì?
+Khác với executeQuery() (trả về một bảng dữ liệu ResultSet), phương thức executeUpdate() được dùng cho các lệnh thay đổi dữ liệu (INSERT, UPDATE, DELETE) và nó trả về một số nguyên (int).
+Số nguyên này đại diện cho số dòng (records) trong Database đã bị tác động bởi câu lệnh SQL.
+
+2. Làm thế nào để dùng giá trị này nhằm phản hồi chính xác?
+Trong trường hợp câu lệnh UPDATE Beds... WHERE bed_id = ...:
+
+Nếu mã giường tồn tại, Database sẽ tìm thấy 1 dòng và cập nhật nó. executeUpdate() sẽ trả về 1.
+
+Nếu mã giường không tồn tại (ví dụ: Bed_999), Database quét qua bảng, không tìm thấy dòng nào thỏa mãn điều kiện WHERE, nên không có dòng nào bị cập nhật. Lúc này, lệnh SQL vẫn chạy thành công (không có lỗi cú pháp) nhưng executeUpdate() sẽ trả về 0.
+
+Do đó, ta chỉ cần gán giá trị trả về này vào một biến số nguyên và dùng lệnh if-else kiểm tra:
+
+Nếu biến > 0: Cập nhật thành công.
+
+Nếu biến == 0: Báo lỗi mã giường không tồn tại.
+
+Phần 2 - Thực thi: Viết lại mã nguồn an toàn và chính xác
+Bên cạnh lỗi về mặt logic (không kiểm tra số dòng bị tác động), đoạn code cũ còn mắc một lỗi cực kỳ nghiêm trọng về bảo mật: Sử dụng nối chuỗi (+ inputId) dễ dẫn đến SQL Injection.
+
+Vì đây là bài tập mức độ "Giỏi", chúng ta sẽ nâng cấp code lên dùng PreparedStatement kết hợp với việc kiểm tra kết quả trả về:
+
+Java
+// Giả định inputId là biến kiểu String chứa mã giường (ví dụ: "Bed_999")
+String inputId = "Bed_999";
+
+// Sử dụng PreparedStatement với dấu ? để chống SQL Injection
+String sql = "UPDATE Beds SET bed_status = 'Occupied' WHERE bed_id = ?";
+
+try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+    // Gán giá trị an toàn vào tham số
+    pstmt.setString(1, inputId);
+
+    // Thực thi và LẤY SỐ DÒNG BỊ TÁC ĐỘNG
+    int rowsAffected = pstmt.executeUpdate();
+
+    // Kiểm tra kết quả để phản hồi cho y tá
+    if (rowsAffected > 0) {
+        System.out.println("Thành công: Đã cập nhật trạng thái giường '" + inputId + "' thành 'Đang sử dụng'.");
+    } else {
+        // Nếu rowsAffected là 0, nghĩa là không có dòng nào được cập nhật
+        System.err.println("Lỗi: Mã giường '" + inputId + "' không tồn tại trong hệ thống. Vui lòng kiểm tra lại!");
+    }
+
+} catch (SQLException e) {
+    System.err.println("Lỗi hệ thống khi cập nhật CSDL: " + e.getMessage());
+}

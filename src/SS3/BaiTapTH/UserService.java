@@ -10,12 +10,10 @@ public class UserService {
     }
 
     public Tier classifyTier(long months) {
-        if (months > 24) {
-            return new Gold();
-        } else if (months > 12) {
-            return new Silver();
-        } else {
-            return new Bronze();
-        }
+        return switch ((int)(months > 24 ? 2 : months > 12 ? 1 : 0)) {
+            case 2 -> new Gold();
+            case 1 -> new Silver();
+            default -> new Bronze();
+        };
     }
 }

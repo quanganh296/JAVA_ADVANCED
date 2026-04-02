@@ -1,0 +1,77 @@
+Phần 1 - Phân tích: Sự nguy hiểm của việc rò rỉ kết nối (Connection Leak)
+Việc khởi tạo kết nối liên tục (mỗi lần cần truy xuất lại gọi DriverManager.getConnection) mà không đóng (Close) sẽ dẫn đến tình trạng "rò rỉ kết nối" (Connection Leak). Đối với một hệ thống y tế yêu cầu hoạt động 24/7, điều này cực kỳ nguy hiểm vì những lý do sau:
+
+Cạn kiệt tài nguyên (Resource Exhaustion): Mỗi hệ quản trị CSDL (như MySQL) chỉ cho phép một số lượng kết nối đồng thời nhất định (ví dụ: max_connections mặc định thường là 151). Nếu bạn mở kết nối mà không đóng, các kết nối cũ sẽ bị treo lơ lửng ở trạng thái "Idle". Chỉ sau vài tiếng, số lượng kết nối sẽ đạt mức tối đa.
+
+Hệ thống bị "Treo" hoặc sập (Downtime): Khi CSDL đã hết "chỗ" cho kết nối mới, bất kỳ yêu cầu truy xuất bệnh án nào tiếp theo từ bác sĩ/y tá đều bị từ chối hoặc phải chờ đợi vô thời hạn (gây ra lỗi Communications link failure hoặc Too many connections). Phần mềm sẽ bị treo cứng.
+
+Hậu quả y tế nghiêm trọng: Chậm trễ trong việc truy xuất hồ sơ bệnh án, lịch sử dị ứng thuốc, hay kết quả xét nghiệm có thể ảnh hưởng trực tiếp đến quyết định điều trị và tính mạng của bệnh nhân.
+
+Bảo mật kém: Việc "khai báo cứng" (hardcode) thông tin nhạy cảm như tài khoản/mật khẩu ngay trong hàm sẽ gây rủi ro lộ lọt thông tin nếu mã nguồn bị truy cập trái phép.
+
+Phần 2 - Thực thi: Cấu trúc lại lớp DBContext
+Để khắc phục, chúng ta cần đưa cấu hình ra thành các hằng số (constants) để dễ quản lý, và bắt buộc phải có khối finally trong các hàm truy vấn để đảm bảo dù code chạy thành công hay xảy ra lỗi, kết nối vẫn luôn được trả lại cho hệ thống.
+
+Java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class DBContext {
+
+    // 1. Sử dụng hằng số (static final) cho cấu hình
+    private static final String DB_URL = "jdbc:mysql://192.168.1.10:3306/Hospital_DB";
+    private static final String DB_USER = "admin";
+    private static final String DB_PASS = "med123";
+
+    // 2. Phương thức lấy kết nối tập trung
+    public static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    }
+
+    // 3. Ví dụ một phương thức truy vấn áp dụng quy tắc ĐÓNG KẾT NỐI TRONG FINALLY
+    public void getPatientRecord(int patientId) {
+        Connection conn = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+
+        try {
+            // Mở kết nối
+            conn = DBContext.getConnection();
+
+            // Thực thi truy vấn
+            String sql = "SELECT * FROM PatientRecords WHERE PatientID = ?";
+            pstmt = conn.prepareStatement(sql);
+            pstmt.setInt(1, patientId);
+            rs = pstmt.executeQuery();
+
+            // Xử lý dữ liệu (ví dụ in ra màn hình)
+            while (rs.next()) {
+                System.out.println("Tên bệnh nhân: " + rs.getString("PatientName"));
+                // ... lấy các trường khác
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi truy vấn CSDL: " + e.getMessage());
+            e.printStackTrace();
+
+        } finally {
+            // 4. LUÔN LUÔN đóng tài nguyên trong khối finally theo thứ tự ngược lại (ResultSet -> PreparedStatement -> Connection)
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+                if (conn != null) {
+                    conn.close(); // Quan trọng nhất: Trả lại kết nối cho Database
+                }
+            } catch (SQLException ex) {
+                System.err.println("Lỗi khi đóng kết nối: " + ex.getMessage());
+            }
+        }
+    }
+}

@@ -1,0 +1,44 @@
+Phần 1 - Phân tích
+1. Tại sao lệnh if không đủ để "in danh sách"?
+
+Cấu trúc if chỉ kiểm tra điều kiện và thực thi khối lệnh bên trong một lần duy nhất. Khi bạn dùng if (rs.next()), chương trình chỉ lấy và in ra dòng dữ liệu đầu tiên (nếu có) rồi đi tiếp.
+
+Việc "in danh sách" đòi hỏi ứng dụng phải duyệt qua nhiều dòng dữ liệu liên tiếp. Do đó, chúng ta bắt buộc phải sử dụng cấu trúc lặp (vòng lặp) thay vì cấu trúc rẽ nhánh (if).
+
+2. Con trỏ (Cursor) của ResultSet thay đổi thế nào sau mỗi lần gọi next()?
+
+Trạng thái ban đầu: Ngay khi ResultSet được tạo ra, con trỏ dữ liệu nằm ở vị trí trỏ vào khoảng không trước dòng dữ liệu đầu tiên (before first). Lúc này bạn chưa thể lấy dữ liệu.
+
+Khi gọi next(): Con trỏ sẽ tự động di chuyển tiến lên một dòng.
+
+Nếu vị trí mới có chứa dữ liệu hợp lệ, phương thức trả về true. Lúc này bạn có thể dùng các hàm getString(), getInt()... để đọc dữ liệu.
+
+Nếu vị trí mới đã vượt qua dòng cuối cùng (tức là đã duyệt hết bảng), phương thức trả về false. Trạng thái này sẽ làm điều kiện thoát hoàn hảo cho vòng lặp.
+
+Phần 2 - Thực thi
+Dưới đây là đoạn mã đã được sửa lại, thay thế if bằng vòng lặp while và bổ sung lệnh lấy số lượng tồn kho:
+
+Java
+try {
+    // Thực thi câu truy vấn
+    ResultSet rs = stmt.executeQuery("SELECT medicine_name, stock FROM Pharmacy");
+
+    System.out.println("--- DANH MỤC THUỐC HIỆN CÓ ---");
+
+    // Sử dụng vòng lặp while để duyệt qua tất cả các dòng dữ liệu
+    while (rs.next()) {
+        // Lấy tên thuốc (kiểu Chuỗi)
+        String tenThuoc = rs.getString("medicine_name");
+
+        // Lấy số lượng tồn kho (kiểu Số nguyên)
+        int tonKho = rs.getInt("stock");
+
+        // In thông tin ra màn hình
+        System.out.println("Tên thuốc: " + tenThuoc + " | Tồn kho: " + tonKho);
+    }
+
+    System.out.println("------------------------------");
+
+} catch (SQLException e) {
+    System.err.println("Lỗi khi đọc dữ liệu: " + e.getMessage());
+}

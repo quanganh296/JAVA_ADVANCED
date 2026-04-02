@@ -1,0 +1,44 @@
+Phần 1 - Phân tích: Luồng thực thi và nguyên nhân rò rỉ dữ liệu
+1. Quá trình nối chuỗi tạo ra mã độc:
+Mục đích ban đầu của câu truy vấn là tìm chính xác một bệnh nhân:
+SELECT * FROM Patients WHERE full_name = '[Tên_Bệnh_Nhân]'
+
+Tuy nhiên, do mã nguồn sử dụng phép nối chuỗi (+) trực tiếp, khi hacker nhập vào đoạn mã: ' OR '1'='1, câu lệnh SQL cuối cùng được gửi đến cơ sở dữ liệu sẽ biến thành:
+SELECT * FROM Patients WHERE full_name = '' OR '1'='1'
+
+2. Tại sao mệnh đề WHERE lại luôn đúng (true)?
+Hệ quản trị cơ sở dữ liệu sẽ đánh giá điều kiện WHERE cho từng dòng trong bảng Patients. Điều kiện này hiện tại gồm 2 vế được nối với nhau bằng toán tử OR (HOẶC):
+
+Vế 1 (full_name = ''): Kiểm tra xem tên bệnh nhân có rỗng không (thường là False).
+
+Vế 2 ('1'='1'): Kiểm tra xem chuỗi '1' có bằng chuỗi '1' không. Điều này hiển nhiên luôn luôn đúng (True).
+
+Theo quy tắc logic của toán tử OR, chỉ cần một trong hai vế đúng thì toàn bộ biểu thức sẽ đúng (False OR True = True). Do đó, điều kiện WHERE trở thành True đối với tất cả các dòng trong CSDL. Hậu quả là thay vì trả về 1 bệnh nhân, hệ thống sẽ trả về toàn bộ hồ sơ bệnh án có trong bảng, gây rò rỉ dữ liệu nghiêm trọng.
+
+Phần 2 - Thực thi: Giải pháp làm sạch dữ liệu (Sanitize Input) cho Statement
+Theo yêu cầu của bài tập, để tiếp tục sử dụng Statement mà vẫn hạn chế rủi ro, chúng ta phải "làm sạch" (sanitize) dữ liệu đầu vào bằng cách tìm và loại bỏ các ký tự đặc biệt thường được dùng để thay đổi cấu trúc SQL (như dấu nháy đơn ', dấu chấm phẩy ; để kết thúc lệnh, hay dấu -- để comment).
+
+Đoạn mã khắc phục:
+
+Java
+// 1. Dữ liệu đầu vào từ người dùng (giả lập có chứa mã độc)
+String rawInput = "' OR '1'='1";
+
+// 2. Tiền xử lý: Loại bỏ các ký tự nguy hiểm trước khi đưa vào SQL
+String safeInput = rawInput.replace("'", "")   // Xóa dấu nháy đơn
+                           .replace("--", "")  // Xóa dấu chú thích (comment) của SQL
+                           .replace(";", "");  // Xóa dấu chấm phẩy kết thúc lệnh
+
+// 3. Thực thi truy vấn với chuỗi đã được làm sạch
+String sql = "SELECT * FROM Patients WHERE full_name = '" + safeInput + "'";
+
+try {
+    ResultSet rs = stmt.executeQuery(sql);
+
+    // In kết quả
+    while(rs.next()) {
+        System.out.println("Tên: " + rs.getString("full_name"));
+    }
+} catch (SQLException e) {
+    System.err.println("Lỗi truy vấn: " + e.getMessage());
+}
