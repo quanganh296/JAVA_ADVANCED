@@ -1,0 +1,10 @@
+Phần 1 - Phân tích: Tại sao setDouble() và setInt() lại giải quyết được vấn đề Locale?
+Vấn đề cốt lõi của việc nối chuỗi (" + temp + ") là Java sẽ gọi hàm String.valueOf(temp) hoặc tương đương. Hàm này thường phụ thuộc vào Locale (vùng miền) của hệ điều hành. Nếu máy chạy ở Việt Nam hoặc Pháp, 37.5 biến thành "37,5". Khi đẩy vào SQL, câu lệnh thành SET temperature = 37,5, và Database sẽ báo lỗi vì dấu phẩy được hiểu là ký tự phân cách cột, chứ không phải phân cách thập phân.
+
+PreparedStatement giải quyết việc này bằng cơ chế Binary Data Transfer:
+
+Truyền dữ liệu gốc: Khi bạn dùng setDouble(1, 37.5), Driver JDBC không biến số đó thành chuỗi "37.5" hay "37,5". Nó gửi giá trị nhị phân (binary) của số thực đó trực tiếp đến Database.
+
+Không thông qua trình thông dịch văn bản: Vì dữ liệu được gửi đi dưới dạng giá trị số thuần túy, Database nhận diện được ngay đó là một double mà không cần phải "đọc" và "phân tích" xem dấu nào là dấu thập phân.
+
+Tính nhất quán: Dù Server của bạn đặt ở Mỹ (dấu chấm) hay ở Việt Nam (dấu phẩy), code của bạn vẫn chạy ổn định vì logic xử lý kiểu dữ liệu đã được trừu tượng hóa ở tầng Driver.

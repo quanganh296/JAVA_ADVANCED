@@ -1,0 +1,16 @@
+Phần 1 - Phân tích: Bản chất của registerOutParameter()
+1. Tại sao bắt buộc phải gọi registerOutParameter()?
+Khác với câu lệnh SELECT thông thường trả về một ResultSet (bảng dữ liệu), Stored Procedure có thể trả về các giá trị thông qua các biến trung gian (OUT parameters).
+
+JDBC cần registerOutParameter() vì:
+
+Cấp phát bộ nhớ: Driver JDBC cần biết kiểu dữ liệu của tham số trả về là gì để chuẩn bị vùng nhớ tương ứng trước khi gửi yêu cầu đến Database.
+
+Ánh xạ kiểu dữ liệu (Data Mapping): Database có kiểu dữ liệu riêng (như NUMBER, VARCHAR2), và Java có kiểu riêng. Việc đăng ký này giúp Driver biết cách "dịch" giá trị từ Database sang kiểu dữ liệu Java mà bạn mong muốn.
+
+Tuân thủ giao thức: Nếu không đăng ký, Driver sẽ mặc định đó chỉ là một tham số đầu vào (IN), dẫn đến lỗi khi bạn cố gắng lấy dữ liệu ra sau khi thực thi.
+
+2. Kiểu DECIMAL trong SQL tương ứng với hằng số nào?
+Nếu tham số đầu ra là kiểu DECIMAL (thường dùng cho tiền tệ vì độ chính xác cao), trong Java bạn phải đăng ký bằng hằng số:
+
+java.sql.Types.DECIMAL (hoặc đôi khi là java.sql.Types.NUMERIC tùy hệ quản trị cơ sở dữ liệu).

@@ -1,0 +1,12 @@
+Phần 1: Phân tích sự lãng phí tài nguyên của Database Server
+Khi bạn sử dụng Statement và nối chuỗi trong vòng lặp 1.000 lần, Database Server sẽ phải thực hiện quy trình sau 1.000 lần liên tục:
+
+Hard Parse (Phân tích cú pháp nặng): Kiểm tra xem câu lệnh có đúng cú pháp không, bảng Results có tồn tại không, cột data có đúng tên không.
+
+Optimizer & Execution Plan: Database phải tính toán đường đi tối ưu nhất để ghi dữ liệu này vào đĩa cứng.
+
+Lãng phí tài nguyên: * CPU: Căng mình ra để biên dịch 1.000 câu lệnh "có vẻ" khác nhau (vì dữ liệu nối vào làm chuỗi SQL thay đổi).
+
+SGA/Buffer Cache: Database sẽ lưu trữ 1.000 kế hoạch thực thi khác nhau vào bộ nhớ đệm, làm tràn bộ nhớ và đẩy các kế hoạch thực thi hữu ích khác ra ngoài.
+
+Network Latency: Gửi 1.000 chuỗi SQL dài dằng dặc qua mạng thay vì chỉ gửi dữ liệu thô.

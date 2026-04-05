@@ -1,0 +1,18 @@
+Phần 1 - Phân tích: Tại sao PreparedStatement là "Tấm khiên" vững chắc?
+Để hiểu tại sao PreparedStatement lại an toàn, chúng ta cần nhìn vào cách nó xử lý dữ liệu khác với cách cộng chuỗi (String Concatenation) thông thường.
+
+1. Cơ chế "Pre-compiled" (Biên dịch trước)
+Khi bạn sử dụng PreparedStatement, câu lệnh SQL sẽ được gửi đến Database Engine để biên dịch (parse/compile) cấu trúc trước khi dữ liệu thực tế được đưa vào.
+
+Ví dụ: Cấu trúc là: SELECT * FROM doctors WHERE doctor_code = ? AND password = ?.
+
+Lúc này, Database đã "chốt" xong kế hoạch thực thi. Nó hiểu rằng chỉ có 2 vị trí dấu hỏi chấm là dành cho dữ liệu đầu vào.
+
+2. Tách biệt giữa Lệnh (Code) và Dữ liệu (Data)
+Đây là điểm mấu chốt. Với PreparedStatement, mọi tham số bạn truyền vào qua các hàm setString(), setInt()... đều được Database đối xử như là giá trị thuần túy (Literals), không bao giờ được coi là một phần của câu lệnh SQL.
+
+Khi hacker nhập: ' OR '1'='1
+
+Với cách cũ (Cộng chuỗi): Câu lệnh trở thành ... WHERE password = '' OR '1'='1'. Database thực thi logic OR '1'='1' và cho phép đăng nhập.
+
+Với PreparedStatement: Database sẽ tìm kiếm một bác sĩ có mật khẩu chính xác là chuỗi ký tự "' OR '1'='1". Vì không có ai đặt mật khẩu kỳ quặc như vậy, cuộc tấn công thất bại hoàn toàn.
