@@ -1,0 +1,8 @@
+Phần 1: Phân tích logic
+Việc chỉ sử dụng System.out.println() để in ra lỗi trong khối catch mà không có hành động can thiệp vào Database là một sai lầm nghiêm trọng vì những lý do sau:
+
+Dữ liệu bị "treo" (Dangling Transaction): Khi bạn tắt Auto-commit, mọi thay đổi (như việc trừ tiền ở bước 1) mới chỉ được ghi vào bộ nhớ đệm (buffer) của Database và đang ở trạng thái "chờ". Nếu gặp lỗi ở bước 2 và bạn không ra lệnh hủy, Database sẽ rơi vào trạng thái chờ đợi vô thời hạn cho đến khi kết nối bị ngắt.
+
+Chiếm dụng tài nguyên (Locking): Database thường thực hiện khóa (lock) các hàng dữ liệu đang được sửa đổi để đảm bảo tính nhất quán. Nếu không có lệnh kết thúc giao dịch (Rollback), các hàng này sẽ bị khóa lâu hơn mức cần thiết, khiến các tiến trình khác không thể truy cập hoặc cập nhật, gây ra tình trạng nghẽn hệ thống.
+
+Hành động thiết yếu bị bỏ quên: Đó chính là lệnh conn.rollback(). Trong một Transaction, khối catch không chỉ là nơi để thông báo lỗi, mà quan trọng hơn, nó là nơi để khôi phục dữ liệu về trạng thái nguyên bản trước khi lỗi xảy ra.
